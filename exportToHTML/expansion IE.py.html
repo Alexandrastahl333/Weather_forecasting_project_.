@@ -1,0 +1,220 @@
+<html>
+<head>
+<title>expansion IE.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #bcbec4;}
+.s1 { color: #cf8e6d;}
+.s2 { color: #bcbec4;}
+.s3 { color: #7a7e85;}
+.s4 { color: #2aacb8;}
+.s5 { color: #6aab73;}
+</style>
+</head>
+<body bgcolor="#1e1f22">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+expansion IE.py</font>
+</center></td></tr></table>
+<pre>
+<span class="s1">import </span><span class="s0">pandas </span><span class="s1">as </span><span class="s0">pd</span>
+<span class="s1">import </span><span class="s0">numpy </span><span class="s1">as </span><span class="s0">np</span>
+<span class="s1">import </span><span class="s0">matplotlib</span><span class="s2">.</span><span class="s0">pyplot </span><span class="s1">as </span><span class="s0">plt</span>
+<span class="s1">import </span><span class="s0">seaborn </span><span class="s1">as </span><span class="s0">sns</span>
+<span class="s1">from </span><span class="s0">sklearn</span><span class="s2">.</span><span class="s0">cluster </span><span class="s1">import </span><span class="s0">KMeans</span>
+<span class="s1">from </span><span class="s0">sklearn</span><span class="s2">.</span><span class="s0">preprocessing </span><span class="s1">import </span><span class="s0">StandardScaler</span>
+
+<span class="s3"># Ensuring reproducibility</span>
+<span class="s0">np</span><span class="s2">.</span><span class="s0">random</span><span class="s2">.</span><span class="s0">seed</span><span class="s2">(</span><span class="s4">42</span><span class="s2">)</span>
+
+<span class="s3"># Data Generation</span>
+<span class="s0">students </span><span class="s2">= </span><span class="s0">range</span><span class="s2">(</span><span class="s4">1</span><span class="s2">, </span><span class="s4">301</span><span class="s2">)</span>
+<span class="s0">degrees </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">random</span><span class="s2">.</span><span class="s0">choice</span><span class="s2">([</span><span class="s5">'Business'</span><span class="s2">, </span><span class="s5">'Law'</span><span class="s2">, </span><span class="s5">'Engineering'</span><span class="s2">, </span><span class="s5">'Design'</span><span class="s2">], </span><span class="s4">300</span><span class="s2">)</span>
+<span class="s0">genders </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">random</span><span class="s2">.</span><span class="s0">choice</span><span class="s2">([</span><span class="s5">'Male'</span><span class="s2">, </span><span class="s5">'Female'</span><span class="s2">], </span><span class="s4">300</span><span class="s2">)</span>
+<span class="s0">lunch_spots </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">random</span><span class="s2">.</span><span class="s0">choice</span><span class="s2">([</span><span class="s5">'Honest Greens'</span><span class="s2">, </span><span class="s5">'Makkila'</span><span class="s2">, </span><span class="s5">'Pancake House'</span><span class="s2">, </span><span class="s5">'Five Guys'</span><span class="s2">, </span><span class="s5">'Starbucks'</span><span class="s2">, </span><span class="s5">'IE Cafeteria'</span><span class="s2">, </span><span class="s5">'New Spot'</span><span class="s2">], </span><span class="s4">300</span><span class="s2">)</span>
+<span class="s0">time_spent </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">random</span><span class="s2">.</span><span class="s0">normal</span><span class="s2">(</span><span class="s0">loc</span><span class="s2">=</span><span class="s4">35</span><span class="s2">, </span><span class="s0">scale</span><span class="s2">=</span><span class="s4">15</span><span class="s2">, </span><span class="s0">size</span><span class="s2">=</span><span class="s4">300</span><span class="s2">).</span><span class="s0">astype</span><span class="s2">(</span><span class="s0">int</span><span class="s2">)  </span><span class="s3"># Average time spent in minutes</span>
+<span class="s0">ratings </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">random</span><span class="s2">.</span><span class="s0">randint</span><span class="s2">(</span><span class="s4">1</span><span class="s2">, </span><span class="s4">6</span><span class="s2">, </span><span class="s0">size</span><span class="s2">=</span><span class="s4">300</span><span class="s2">)  </span><span class="s3"># Ratings from 1 to 5</span>
+<span class="s0">price_ranges </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">random</span><span class="s2">.</span><span class="s0">choice</span><span class="s2">([</span><span class="s5">'Low'</span><span class="s2">, </span><span class="s5">'Medium'</span><span class="s2">, </span><span class="s5">'High'</span><span class="s2">], </span><span class="s4">300</span><span class="s2">, </span><span class="s0">p</span><span class="s2">=[</span><span class="s4">0.2</span><span class="s2">, </span><span class="s4">0.6</span><span class="s2">, </span><span class="s4">0.2</span><span class="s2">])</span>
+<span class="s0">sortiment </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">random</span><span class="s2">.</span><span class="s0">choice</span><span class="s2">([</span><span class="s5">'Limited'</span><span class="s2">, </span><span class="s5">'Diverse'</span><span class="s2">, </span><span class="s5">'Very Diverse'</span><span class="s2">], </span><span class="s4">300</span><span class="s2">, </span><span class="s0">p</span><span class="s2">=[</span><span class="s4">0.3</span><span class="s2">, </span><span class="s4">0.5</span><span class="s2">, </span><span class="s4">0.2</span><span class="s2">])</span>
+<span class="s0">freshness </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">random</span><span class="s2">.</span><span class="s0">choice</span><span class="s2">([</span><span class="s5">'Average'</span><span class="s2">, </span><span class="s5">'Fresh'</span><span class="s2">, </span><span class="s5">'Very Fresh'</span><span class="s2">], </span><span class="s4">300</span><span class="s2">, </span><span class="s0">p</span><span class="s2">=[</span><span class="s4">0.2</span><span class="s2">, </span><span class="s4">0.5</span><span class="s2">, </span><span class="s4">0.3</span><span class="s2">])</span>
+<span class="s0">instagramable </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">random</span><span class="s2">.</span><span class="s0">choice</span><span class="s2">([</span><span class="s1">True</span><span class="s2">, </span><span class="s1">False</span><span class="s2">], </span><span class="s4">300</span><span class="s2">, </span><span class="s0">p</span><span class="s2">=[</span><span class="s4">0.6</span><span class="s2">, </span><span class="s4">0.4</span><span class="s2">])</span>
+<span class="s0">atmosphere </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">random</span><span class="s2">.</span><span class="s0">choice</span><span class="s2">([</span><span class="s5">'Cozy'</span><span class="s2">, </span><span class="s5">'Modern'</span><span class="s2">, </span><span class="s5">'Elegant'</span><span class="s2">, </span><span class="s5">'Casual'</span><span class="s2">], </span><span class="s4">300</span><span class="s2">)</span>
+<span class="s0">waiting_time </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">random</span><span class="s2">.</span><span class="s0">normal</span><span class="s2">(</span><span class="s0">loc</span><span class="s2">=</span><span class="s4">10</span><span class="s2">, </span><span class="s0">scale</span><span class="s2">=</span><span class="s4">5</span><span class="s2">, </span><span class="s0">size</span><span class="s2">=</span><span class="s4">300</span><span class="s2">).</span><span class="s0">astype</span><span class="s2">(</span><span class="s0">int</span><span class="s2">)  </span><span class="s3"># Average waiting time in minutes</span>
+
+<span class="s3"># DataFrame creation</span>
+<span class="s0">df </span><span class="s2">= </span><span class="s0">pd</span><span class="s2">.</span><span class="s0">DataFrame</span><span class="s2">({</span>
+    <span class="s5">'Student_ID'</span><span class="s2">: </span><span class="s0">students</span><span class="s2">,</span>
+    <span class="s5">'Degree'</span><span class="s2">: </span><span class="s0">degrees</span><span class="s2">,</span>
+    <span class="s5">'Gender'</span><span class="s2">: </span><span class="s0">genders</span><span class="s2">,</span>
+    <span class="s5">'Lunch_Spot'</span><span class="s2">: </span><span class="s0">lunch_spots</span><span class="s2">,</span>
+    <span class="s5">'Time_Spent'</span><span class="s2">: </span><span class="s0">time_spent</span><span class="s2">,</span>
+    <span class="s5">'Rating'</span><span class="s2">: </span><span class="s0">ratings</span><span class="s2">,</span>
+    <span class="s5">'Price_Range'</span><span class="s2">: </span><span class="s0">price_ranges</span><span class="s2">,</span>
+    <span class="s5">'Sortiment'</span><span class="s2">: </span><span class="s0">sortiment</span><span class="s2">,</span>
+    <span class="s5">'Freshness'</span><span class="s2">: </span><span class="s0">freshness</span><span class="s2">,</span>
+    <span class="s5">'Instagramable'</span><span class="s2">: </span><span class="s0">instagramable</span><span class="s2">,</span>
+    <span class="s5">'Atmosphere'</span><span class="s2">: </span><span class="s0">atmosphere</span><span class="s2">,</span>
+    <span class="s5">'Waiting_Time'</span><span class="s2">: </span><span class="s0">waiting_time</span>
+<span class="s2">})</span>
+
+<span class="s3"># Advanced Visualization: Heatmap for Correlation Analysis</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">figure</span><span class="s2">(</span><span class="s0">figsize</span><span class="s2">=(</span><span class="s4">10</span><span class="s2">, </span><span class="s4">8</span><span class="s2">))</span>
+<span class="s0">sns</span><span class="s2">.</span><span class="s0">heatmap</span><span class="s2">(</span><span class="s0">df</span><span class="s2">.</span><span class="s0">select_dtypes</span><span class="s2">(</span><span class="s0">include</span><span class="s2">=[</span><span class="s0">np</span><span class="s2">.</span><span class="s0">number</span><span class="s2">]).</span><span class="s0">corr</span><span class="s2">(), </span><span class="s0">annot</span><span class="s2">=</span><span class="s1">True</span><span class="s2">, </span><span class="s0">cmap</span><span class="s2">=</span><span class="s5">'coolwarm'</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">title</span><span class="s2">(</span><span class="s5">'Correlation Matrix'</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">show</span><span class="s2">()</span>
+
+<span class="s3"># Data Preprocessing for Clustering</span>
+<span class="s0">features </span><span class="s2">= </span><span class="s0">df</span><span class="s2">[[</span><span class="s5">'Time_Spent'</span><span class="s2">, </span><span class="s5">'Rating'</span><span class="s2">, </span><span class="s5">'Waiting_Time'</span><span class="s2">]]</span>
+<span class="s0">scaler </span><span class="s2">= </span><span class="s0">StandardScaler</span><span class="s2">()</span>
+<span class="s0">features_scaled </span><span class="s2">= </span><span class="s0">scaler</span><span class="s2">.</span><span class="s0">fit_transform</span><span class="s2">(</span><span class="s0">features</span><span class="s2">)</span>
+
+<span class="s3"># Performing K-Means Clustering</span>
+<span class="s0">kmeans </span><span class="s2">= </span><span class="s0">KMeans</span><span class="s2">(</span><span class="s0">n_clusters</span><span class="s2">=</span><span class="s4">3</span><span class="s2">, </span><span class="s0">random_state</span><span class="s2">=</span><span class="s4">42</span><span class="s2">)</span>
+<span class="s0">df</span><span class="s2">[</span><span class="s5">'Cluster'</span><span class="s2">] = </span><span class="s0">kmeans</span><span class="s2">.</span><span class="s0">fit_predict</span><span class="s2">(</span><span class="s0">features_scaled</span><span class="s2">)</span>
+<span class="s3"># Assuming the other parts of your DataFrame df are correctly defined</span>
+<span class="s3"># Adding the 'Dietary_Preferences' column with a mock distribution</span>
+<span class="s0">df</span><span class="s2">[</span><span class="s5">'Dietary_Preferences'</span><span class="s2">] = </span><span class="s0">np</span><span class="s2">.</span><span class="s0">random</span><span class="s2">.</span><span class="s0">choice</span><span class="s2">([</span><span class="s5">'No Preference'</span><span class="s2">, </span><span class="s5">'Vegetarian'</span><span class="s2">, </span><span class="s5">'Vegan'</span><span class="s2">, </span><span class="s5">'Gluten-Free'</span><span class="s2">], </span><span class="s0">size</span><span class="s2">=</span><span class="s4">300</span><span class="s2">, </span><span class="s0">p</span><span class="s2">=[</span><span class="s4">0.5</span><span class="s2">, </span><span class="s4">0.2</span><span class="s2">, </span><span class="s4">0.2</span><span class="s2">, </span><span class="s4">0.1</span><span class="s2">])</span>
+
+<span class="s3"># Calculate the number of students by dietary preference for each lunch spot</span>
+<span class="s0">dietary_lunch_spot_counts </span><span class="s2">= </span><span class="s0">df</span><span class="s2">.</span><span class="s0">groupby</span><span class="s2">([</span><span class="s5">'Lunch_Spot'</span><span class="s2">, </span><span class="s5">'Dietary_Preferences'</span><span class="s2">]).</span><span class="s0">size</span><span class="s2">().</span><span class="s0">unstack</span><span class="s2">(</span><span class="s0">fill_value</span><span class="s2">=</span><span class="s4">0</span><span class="s2">)</span>
+
+<span class="s3"># Plot a stacked bar chart</span>
+
+<span class="s3"># Group by 'Lunch_Spot' and 'Dietary_Preferences', then count the number of students in each group</span>
+<span class="s0">dietary_lunch_spot_counts </span><span class="s2">= </span><span class="s0">df</span><span class="s2">.</span><span class="s0">groupby</span><span class="s2">([</span><span class="s5">'Lunch_Spot'</span><span class="s2">, </span><span class="s5">'Dietary_Preferences'</span><span class="s2">]).</span><span class="s0">size</span><span class="s2">().</span><span class="s0">unstack</span><span class="s2">(</span><span class="s0">fill_value</span><span class="s2">=</span><span class="s4">0</span><span class="s2">)</span>
+
+<span class="s3"># Plotting the stacked bar chart</span>
+<span class="s0">dietary_lunch_spot_counts</span><span class="s2">.</span><span class="s0">plot</span><span class="s2">(</span><span class="s0">kind</span><span class="s2">=</span><span class="s5">'bar'</span><span class="s2">, </span><span class="s0">stacked</span><span class="s2">=</span><span class="s1">True</span><span class="s2">, </span><span class="s0">figsize</span><span class="s2">=(</span><span class="s4">14</span><span class="s2">, </span><span class="s4">8</span><span class="s2">), </span><span class="s0">colormap</span><span class="s2">=</span><span class="s5">'viridis'</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">title</span><span class="s2">(</span><span class="s5">'Popularity of Lunch Spots by Dietary Preferences'</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">xlabel</span><span class="s2">(</span><span class="s5">'Lunch Spot'</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">ylabel</span><span class="s2">(</span><span class="s5">'Number of Students'</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">xticks</span><span class="s2">(</span><span class="s0">rotation</span><span class="s2">=</span><span class="s4">45</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">legend</span><span class="s2">(</span><span class="s0">title</span><span class="s2">=</span><span class="s5">'Dietary Preferences'</span><span class="s2">, </span><span class="s0">bbox_to_anchor</span><span class="s2">=(</span><span class="s4">1.05</span><span class="s2">, </span><span class="s4">1</span><span class="s2">), </span><span class="s0">loc</span><span class="s2">=</span><span class="s5">'upper left'</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">tight_layout</span><span class="s2">()</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">show</span><span class="s2">()</span>
+
+
+<span class="s3"># Cross-Analysis: Price Range Preference by Gender</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">figure</span><span class="s2">(</span><span class="s0">figsize</span><span class="s2">=(</span><span class="s4">10</span><span class="s2">, </span><span class="s4">6</span><span class="s2">))</span>
+<span class="s0">sns</span><span class="s2">.</span><span class="s0">countplot</span><span class="s2">(</span><span class="s0">x</span><span class="s2">=</span><span class="s5">'Price_Range'</span><span class="s2">, </span><span class="s0">hue</span><span class="s2">=</span><span class="s5">'Gender'</span><span class="s2">, </span><span class="s0">data</span><span class="s2">=</span><span class="s0">df</span><span class="s2">, </span><span class="s0">palette</span><span class="s2">=</span><span class="s5">'Pastel2'</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">title</span><span class="s2">(</span><span class="s5">'Price Range Preference by Gender'</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">show</span><span class="s2">()</span>
+
+<span class="s3"># Insights &amp; Recommendations based on the analysis (not executable, conceptual)</span>
+<span class="s3"># Generate a mock 'Dietary_Preferences' column if it doesn't exist</span>
+<span class="s3"># This is just for demonstration; ensure your actual data includes this information</span>
+<span class="s1">if </span><span class="s5">'Dietary_Preferences' </span><span class="s1">not in </span><span class="s0">df</span><span class="s2">.</span><span class="s0">columns</span><span class="s2">:</span>
+    <span class="s0">df</span><span class="s2">[</span><span class="s5">'Dietary_Preferences'</span><span class="s2">] = </span><span class="s0">np</span><span class="s2">.</span><span class="s0">random</span><span class="s2">.</span><span class="s0">choice</span><span class="s2">([</span><span class="s5">'No Preference'</span><span class="s2">, </span><span class="s5">'Vegetarian'</span><span class="s2">, </span><span class="s5">'Vegan'</span><span class="s2">, </span><span class="s5">'Gluten-Free'</span><span class="s2">], </span><span class="s0">size</span><span class="s2">=</span><span class="s0">df</span><span class="s2">.</span><span class="s0">shape</span><span class="s2">[</span><span class="s4">0</span><span class="s2">], </span><span class="s0">p</span><span class="s2">=[</span><span class="s4">0.5</span><span class="s2">, </span><span class="s4">0.2</span><span class="s2">, </span><span class="s4">0.2</span><span class="s2">, </span><span class="s4">0.1</span><span class="s2">])</span>
+
+<span class="s3"># Calculate the average rating for each lunch spot by dietary preference</span>
+<span class="s0">average_ratings </span><span class="s2">= </span><span class="s0">df</span><span class="s2">.</span><span class="s0">groupby</span><span class="s2">([</span><span class="s5">'Lunch_Spot'</span><span class="s2">, </span><span class="s5">'Dietary_Preferences'</span><span class="s2">])[</span><span class="s5">'Rating'</span><span class="s2">].</span><span class="s0">mean</span><span class="s2">().</span><span class="s0">reset_index</span><span class="s2">()</span>
+
+<span class="s3"># Plotting the bar chart</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">figure</span><span class="s2">(</span><span class="s0">figsize</span><span class="s2">=(</span><span class="s4">14</span><span class="s2">, </span><span class="s4">10</span><span class="s2">))</span>
+<span class="s0">sns</span><span class="s2">.</span><span class="s0">barplot</span><span class="s2">(</span><span class="s0">x</span><span class="s2">=</span><span class="s5">'Lunch_Spot'</span><span class="s2">, </span><span class="s0">y</span><span class="s2">=</span><span class="s5">'Rating'</span><span class="s2">, </span><span class="s0">hue</span><span class="s2">=</span><span class="s5">'Dietary_Preferences'</span><span class="s2">, </span><span class="s0">data</span><span class="s2">=</span><span class="s0">average_ratings</span><span class="s2">, </span><span class="s0">palette</span><span class="s2">=</span><span class="s5">'Pastel2'</span><span class="s2">)</span>
+
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">title</span><span class="s2">(</span><span class="s5">'Average Ratings by Lunch Spot and Dietary Preferences'</span><span class="s2">, </span><span class="s0">fontsize</span><span class="s2">=</span><span class="s4">16</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">xlabel</span><span class="s2">(</span><span class="s5">'Lunch Spot'</span><span class="s2">, </span><span class="s0">fontsize</span><span class="s2">=</span><span class="s4">14</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">ylabel</span><span class="s2">(</span><span class="s5">'Average Rating'</span><span class="s2">, </span><span class="s0">fontsize</span><span class="s2">=</span><span class="s4">14</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">xticks</span><span class="s2">(</span><span class="s0">rotation</span><span class="s2">=</span><span class="s4">45</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">legend</span><span class="s2">(</span><span class="s0">title</span><span class="s2">=</span><span class="s5">'Dietary Preferences'</span><span class="s2">, </span><span class="s0">bbox_to_anchor</span><span class="s2">=(</span><span class="s4">1.05</span><span class="s2">, </span><span class="s4">1</span><span class="s2">), </span><span class="s0">loc</span><span class="s2">=</span><span class="s5">'upper left'</span><span class="s2">)</span>
+
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">tight_layout</span><span class="s2">()</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">show</span><span class="s2">()</span>
+
+<span class="s3"># What food is missing next to the university ?</span>
+
+<span class="s3">#Step 1: Survey</span>
+<span class="s3"># Simulate survey data</span>
+
+<span class="s1">import </span><span class="s0">pandas </span><span class="s1">as </span><span class="s0">pd</span>
+<span class="s1">import </span><span class="s0">numpy </span><span class="s1">as </span><span class="s0">np</span>
+
+<span class="s3"># Simulate survey data</span>
+<span class="s0">np</span><span class="s2">.</span><span class="s0">random</span><span class="s2">.</span><span class="s0">seed</span><span class="s2">(</span><span class="s4">42</span><span class="s2">)  </span><span class="s3"># For reproducibility</span>
+
+<span class="s0">num_students </span><span class="s2">= </span><span class="s4">300</span>
+
+<span class="s3"># Simulated preferences</span>
+<span class="s0">preferences </span><span class="s2">= {</span>
+    <span class="s5">'Student_ID'</span><span class="s2">: </span><span class="s0">np</span><span class="s2">.</span><span class="s0">arange</span><span class="s2">(</span><span class="s4">1</span><span class="s2">, </span><span class="s0">num_students </span><span class="s2">+ </span><span class="s4">1</span><span class="s2">),</span>
+    <span class="s5">'Prefers_Local_Brands'</span><span class="s2">: </span><span class="s0">np</span><span class="s2">.</span><span class="s0">random</span><span class="s2">.</span><span class="s0">choice</span><span class="s2">([</span><span class="s1">True</span><span class="s2">, </span><span class="s1">False</span><span class="s2">], </span><span class="s0">num_students</span><span class="s2">, </span><span class="s0">p</span><span class="s2">=[</span><span class="s4">0.7</span><span class="s2">, </span><span class="s4">0.3</span><span class="s2">]),</span>
+    <span class="s5">'Seeks_Organic_Ingredients'</span><span class="s2">: </span><span class="s0">np</span><span class="s2">.</span><span class="s0">random</span><span class="s2">.</span><span class="s0">choice</span><span class="s2">([</span><span class="s1">True</span><span class="s2">, </span><span class="s1">False</span><span class="s2">], </span><span class="s0">num_students</span><span class="s2">, </span><span class="s0">p</span><span class="s2">=[</span><span class="s4">0.8</span><span class="s2">, </span><span class="s4">0.2</span><span class="s2">]),</span>
+    <span class="s5">'Wants_Delivery_Service'</span><span class="s2">: </span><span class="s0">np</span><span class="s2">.</span><span class="s0">random</span><span class="s2">.</span><span class="s0">choice</span><span class="s2">([</span><span class="s1">True</span><span class="s2">, </span><span class="s1">False</span><span class="s2">], </span><span class="s0">num_students</span><span class="s2">, </span><span class="s0">p</span><span class="s2">=[</span><span class="s4">0.9</span><span class="s2">, </span><span class="s4">0.1</span><span class="s2">]),</span>
+    <span class="s5">'Needs_Dietary_Options'</span><span class="s2">: </span><span class="s0">np</span><span class="s2">.</span><span class="s0">random</span><span class="s2">.</span><span class="s0">choice</span><span class="s2">([</span><span class="s5">'None'</span><span class="s2">, </span><span class="s5">'Vegan'</span><span class="s2">, </span><span class="s5">'Gluten-Free'</span><span class="s2">, </span><span class="s5">'Dairy-Free'</span><span class="s2">], </span><span class="s0">num_students</span><span class="s2">, </span><span class="s0">p</span><span class="s2">=[</span><span class="s4">0.2</span><span class="s2">, </span><span class="s4">0.3</span><span class="s2">, </span><span class="s4">0.25</span><span class="s2">, </span><span class="s4">0.25</span><span class="s2">]),</span>
+    <span class="s5">'Values_Discounts_And_Rewards'</span><span class="s2">: </span><span class="s0">np</span><span class="s2">.</span><span class="s0">random</span><span class="s2">.</span><span class="s0">choice</span><span class="s2">([</span><span class="s1">True</span><span class="s2">, </span><span class="s1">False</span><span class="s2">], </span><span class="s0">num_students</span><span class="s2">, </span><span class="s0">p</span><span class="s2">=[</span><span class="s4">0.85</span><span class="s2">, </span><span class="s4">0.15</span><span class="s2">]),</span>
+<span class="s2">}</span>
+
+<span class="s0">survey_df </span><span class="s2">= </span><span class="s0">pd</span><span class="s2">.</span><span class="s0">DataFrame</span><span class="s2">(</span><span class="s0">preferences</span><span class="s2">)</span>
+<span class="s3">#Step 2: Analyze Survey Data</span>
+<span class="s3"># Analyzing preferences</span>
+
+<span class="s0">preference_summary </span><span class="s2">= {</span>
+    <span class="s5">'Local Brands'</span><span class="s2">: </span><span class="s0">survey_df</span><span class="s2">[</span><span class="s5">'Prefers_Local_Brands'</span><span class="s2">].</span><span class="s0">mean</span><span class="s2">(),</span>
+    <span class="s5">'Organic Ingredients'</span><span class="s2">: </span><span class="s0">survey_df</span><span class="s2">[</span><span class="s5">'Seeks_Organic_Ingredients'</span><span class="s2">].</span><span class="s0">mean</span><span class="s2">(),</span>
+    <span class="s5">'Delivery Service'</span><span class="s2">: </span><span class="s0">survey_df</span><span class="s2">[</span><span class="s5">'Wants_Delivery_Service'</span><span class="s2">].</span><span class="s0">mean</span><span class="s2">(),</span>
+    <span class="s5">'Discounts and Rewards'</span><span class="s2">: </span><span class="s0">survey_df</span><span class="s2">[</span><span class="s5">'Values_Discounts_And_Rewards'</span><span class="s2">].</span><span class="s0">mean</span><span class="s2">(),</span>
+<span class="s2">}</span>
+
+<span class="s3"># Count dietary needs</span>
+<span class="s0">dietary_needs_counts </span><span class="s2">= </span><span class="s0">survey_df</span><span class="s2">[</span><span class="s5">'Needs_Dietary_Options'</span><span class="s2">].</span><span class="s0">value_counts</span><span class="s2">()</span>
+
+<span class="s3"># Displaying preferences summary</span>
+<span class="s1">for </span><span class="s0">preference</span><span class="s2">, </span><span class="s0">value </span><span class="s1">in </span><span class="s0">preference_summary</span><span class="s2">.</span><span class="s0">items</span><span class="s2">():</span>
+    <span class="s0">print</span><span class="s2">(</span><span class="s5">f&quot;</span><span class="s1">{</span><span class="s0">preference</span><span class="s1">}</span><span class="s5">: </span><span class="s1">{</span><span class="s0">value</span><span class="s1">:</span><span class="s5">.2%</span><span class="s1">}</span><span class="s5">&quot;</span><span class="s2">)</span>
+
+<span class="s3"># Displaying dietary needs preferences</span>
+<span class="s0">print</span><span class="s2">(</span><span class="s5">&quot;</span><span class="s1">\n</span><span class="s5">Dietary Needs Preferences:&quot;</span><span class="s2">)</span>
+<span class="s0">print</span><span class="s2">(</span><span class="s0">dietary_needs_counts</span><span class="s2">)</span>
+
+
+<span class="s3">#To conduct a new survey that outlines and analyzes preferences for a restaurant focusing on local brands, organic ingredients,</span>
+<span class="s3"># with a delivery service, and options for various dietary needs,</span>
+<span class="s3"># We will collect preferences on these specific aspects and analyze the data to validate the &quot;Green Spoon&quot; concept.</span>
+
+<span class="s3"># Simulate survey data</span>
+<span class="s0">np</span><span class="s2">.</span><span class="s0">random</span><span class="s2">.</span><span class="s0">seed</span><span class="s2">(</span><span class="s4">42</span><span class="s2">)  </span><span class="s3"># For reproducibility</span>
+
+<span class="s0">num_students </span><span class="s2">= </span><span class="s4">300</span>
+
+<span class="s3"># Simulated preferences</span>
+<span class="s0">preferences </span><span class="s2">= {</span>
+    <span class="s5">'Student_ID'</span><span class="s2">: </span><span class="s0">np</span><span class="s2">.</span><span class="s0">arange</span><span class="s2">(</span><span class="s4">1</span><span class="s2">, </span><span class="s0">num_students </span><span class="s2">+ </span><span class="s4">1</span><span class="s2">),</span>
+    <span class="s5">'Prefers_Local_Brands'</span><span class="s2">: </span><span class="s0">np</span><span class="s2">.</span><span class="s0">random</span><span class="s2">.</span><span class="s0">choice</span><span class="s2">([</span><span class="s1">True</span><span class="s2">, </span><span class="s1">False</span><span class="s2">], </span><span class="s0">num_students</span><span class="s2">, </span><span class="s0">p</span><span class="s2">=[</span><span class="s4">0.7</span><span class="s2">, </span><span class="s4">0.3</span><span class="s2">]),</span>
+    <span class="s5">'Seeks_Organic_Ingredients'</span><span class="s2">: </span><span class="s0">np</span><span class="s2">.</span><span class="s0">random</span><span class="s2">.</span><span class="s0">choice</span><span class="s2">([</span><span class="s1">True</span><span class="s2">, </span><span class="s1">False</span><span class="s2">], </span><span class="s0">num_students</span><span class="s2">, </span><span class="s0">p</span><span class="s2">=[</span><span class="s4">0.8</span><span class="s2">, </span><span class="s4">0.2</span><span class="s2">]),</span>
+    <span class="s5">'Wants_Delivery_Service'</span><span class="s2">: </span><span class="s0">np</span><span class="s2">.</span><span class="s0">random</span><span class="s2">.</span><span class="s0">choice</span><span class="s2">([</span><span class="s1">True</span><span class="s2">, </span><span class="s1">False</span><span class="s2">], </span><span class="s0">num_students</span><span class="s2">, </span><span class="s0">p</span><span class="s2">=[</span><span class="s4">0.9</span><span class="s2">, </span><span class="s4">0.1</span><span class="s2">]),</span>
+    <span class="s5">'Needs_Dietary_Options'</span><span class="s2">: </span><span class="s0">np</span><span class="s2">.</span><span class="s0">random</span><span class="s2">.</span><span class="s0">choice</span><span class="s2">([</span><span class="s5">'None'</span><span class="s2">, </span><span class="s5">'Vegan'</span><span class="s2">, </span><span class="s5">'Gluten-Free'</span><span class="s2">, </span><span class="s5">'Dairy-Free'</span><span class="s2">], </span><span class="s0">num_students</span><span class="s2">, </span><span class="s0">p</span><span class="s2">=[</span><span class="s4">0.2</span><span class="s2">, </span><span class="s4">0.3</span><span class="s2">, </span><span class="s4">0.25</span><span class="s2">, </span><span class="s4">0.25</span><span class="s2">]),</span>
+    <span class="s5">'Values_Discounts_And_Rewards'</span><span class="s2">: </span><span class="s0">np</span><span class="s2">.</span><span class="s0">random</span><span class="s2">.</span><span class="s0">choice</span><span class="s2">([</span><span class="s1">True</span><span class="s2">, </span><span class="s1">False</span><span class="s2">], </span><span class="s0">num_students</span><span class="s2">, </span><span class="s0">p</span><span class="s2">=[</span><span class="s4">0.85</span><span class="s2">, </span><span class="s4">0.15</span><span class="s2">]),</span>
+<span class="s2">}</span>
+
+
+<span class="s3">#Step 3: Visualization</span>
+<span class="s3"># Set the visual style</span>
+<span class="s0">sns</span><span class="s2">.</span><span class="s0">set</span><span class="s2">(</span><span class="s0">style</span><span class="s2">=</span><span class="s5">&quot;whitegrid&quot;</span><span class="s2">)</span>
+
+<span class="s3"># Visualizing General Preferences</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">figure</span><span class="s2">(</span><span class="s0">figsize</span><span class="s2">=(</span><span class="s4">10</span><span class="s2">, </span><span class="s4">6</span><span class="s2">))</span>
+<span class="s0">sns</span><span class="s2">.</span><span class="s0">barplot</span><span class="s2">(</span><span class="s0">x</span><span class="s2">=</span><span class="s0">list</span><span class="s2">(</span><span class="s0">preference_summary</span><span class="s2">.</span><span class="s0">keys</span><span class="s2">()), </span><span class="s0">y</span><span class="s2">=</span><span class="s0">list</span><span class="s2">(</span><span class="s0">preference_summary</span><span class="s2">.</span><span class="s0">values</span><span class="s2">()), </span><span class="s0">palette</span><span class="s2">=</span><span class="s5">&quot;viridis&quot;</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">title</span><span class="s2">(</span><span class="s5">'Student Preferences for &quot;Green Spoon&quot; Concept'</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">ylabel</span><span class="s2">(</span><span class="s5">'Percentage'</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">xlabel</span><span class="s2">(</span><span class="s5">'Preference Categories'</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">show</span><span class="s2">()</span>
+
+<span class="s3"># Visualizing Dietary Needs</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">figure</span><span class="s2">(</span><span class="s0">figsize</span><span class="s2">=(</span><span class="s4">10</span><span class="s2">, </span><span class="s4">6</span><span class="s2">))</span>
+<span class="s0">dietary_needs_counts</span><span class="s2">.</span><span class="s0">plot</span><span class="s2">(</span><span class="s0">kind</span><span class="s2">=</span><span class="s5">'bar'</span><span class="s2">, </span><span class="s0">color</span><span class="s2">=</span><span class="s5">'teal'</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">title</span><span class="s2">(</span><span class="s5">'Student Dietary Needs Preferences'</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">ylabel</span><span class="s2">(</span><span class="s5">'Number of Students'</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">xlabel</span><span class="s2">(</span><span class="s5">'Dietary Need'</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">xticks</span><span class="s2">(</span><span class="s0">rotation</span><span class="s2">=</span><span class="s4">45</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">show</span><span class="s2">()</span>
+
+<span class="s3">#Analysis and Suggested Concept Validation:</span>
+<span class="s3">#High Demand for Organic and Local: The survey data suggest a strong preference for organic ingredients and local brands among students, validating the core values of &quot;Green Spoon.&quot;</span>
+<span class="s3">#Delivery Service is Essential: The overwhelming preference for delivery service underscores the importance of including this feature in the restaurant's offerings.</span>
+<span class="s3">#Interest in Dietary Options: A significant portion of students have specific dietary needs, highlighting the necessity for &quot;Green Spoon&quot; to offer a variety of menu options catering to vegan, gluten-free, and dairy-free diets.</span>
+<span class="s3">#Discounts and Rewards Are Valued: The high interest in discounts and rewards suggests that incorporating a loyalty program, such as the proposed stamp card for free desserts, could effectively drive repeat visits.</span>
+<span class="s3">#Based on this analysis, the &quot;Green Spoon&quot; concept is well-aligned with student preferences, offering a strong foundation for a successful restaurant next to the university. Continuous engagement and feedback collection will be key to refining and adapting the concept to meet evolving student needs.</span></pre>
+</body>
+</html>
