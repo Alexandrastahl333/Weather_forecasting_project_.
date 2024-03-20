@@ -1,0 +1,62 @@
+import requests
+from bs4 import BeautifulSoup
+import pandas as pd
+import matplotlib.pyplot as plt
+
+
+def scrape_weather_forecast(url):
+    url = "https://www.accuweather.com/en/es/madrid/308526/weather-forecast/308526"
+    scrape_weather_forecast(url)
+
+def fetch_weather_data(url):
+    try:
+        response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'})
+        response.raise_for_status()  # Raises an HTTPError if the response status code is 4XX/5XX
+    except requests.RequestException as e:
+        print(f"Request failed: {e}")
+        return None
+
+    return response.content
+
+
+def parse_weather_data(html_content):
+    soup = BeautifulSoup(html_content, 'html.parser')
+
+    # This part needs to be customized based on the website's structure
+    forecast_data = soup.find_all('div', class_='forecast-item')  # Example class
+
+    dates, highs, lows, descriptions = [], [], [], []
+    for item in forecast_data:
+        dates.append(item.find('span', class_='date').text.strip())
+        highs.append(int(item.find('span', class_='high').text.replace('°', '')))
+        lows.append(int(item.find('span', class_='low').text.replace('°', '')))
+        descriptions.append(item.find('div', class_='description').text.strip())
+
+    return pd.DataFrame({'Date': dates, 'High': highs, 'Low': lows, 'Description': descriptions})
+
+
+def plot_forecast(df):
+    plt.figure(figsize=(10, 6))
+    plt.plot(df['Date'], df['High'], label='High Temp', color='red')
+    plt.plot(df['Date'], df['Low'], label='Low Temp', color='blue')
+    plt.fill_between(df['Date'], df['High'], df['Low'], color='lightgrey')
+    plt.xlabel('Date')
+    plt.ylabel('Temperature (°C)')
+    plt.title('Weather Forecast')
+    plt.xticks(rotation=45)
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+
+if __name__ == "__main__":
+    url = get_forecast_url()
+    html_content = fetch_weather_data(url)
+    if html_content:
+        df = parse_weather_data(html_content)
+        if not df.empty:
+            plot_forecast(df)
+        else:
+            print("No data found to plot.")
+    else:
+        print("Failed to fetch data.")
